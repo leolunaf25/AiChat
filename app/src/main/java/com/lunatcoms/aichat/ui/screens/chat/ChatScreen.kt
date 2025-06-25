@@ -14,9 +14,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.lunatcoms.aichat.ui.theme.AiChatTheme
 import com.lunatcoms.aichat.ui.viewmodel.ChatViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Pantalla principal del chat
@@ -25,7 +26,7 @@ import com.lunatcoms.aichat.ui.viewmodel.ChatViewModel
 @Composable
 fun ChatScreen(
     modifier: Modifier = Modifier,
-    viewModel: ChatViewModel = viewModel()
+    viewModel: ChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
