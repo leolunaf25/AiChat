@@ -3,6 +3,7 @@ package com.lunatcoms.aichat.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lunatcoms.aichat.data.model.ChatMessage
+import com.lunatcoms.aichat.data.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,9 @@ import javax.inject.Inject
  * Maneja la lógica de negocio relacionada con el chat
  */
 @HiltViewModel
-class ChatViewModel @Inject constructor() : ViewModel() {
+class ChatViewModel @Inject constructor(
+    private val chatRepository: ChatRepository
+) : ViewModel() {
 
     // Estado UI
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -38,37 +41,42 @@ class ChatViewModel @Inject constructor() : ViewModel() {
         _uiState.update { currentState ->
             currentState.copy(
                 messages = currentState.messages + userMessage,
-                isLoading = true // Activar indicador de carga
+                isLoading = true, // Activar indicador de carga
+                error = null // Limpiar errores anteriores
             )
         }
         
-        // En una implementación real, aquí se enviaría el mensaje a la API de OpenAI
-        // y se procesaría la respuesta
-        
-        // Por ahora, simulamos una respuesta de la IA
-        simulateAiResponse(content)
-    }
-    
-    /**
-     * Simula una respuesta de la IA
-     * En una implementación real, esto se reemplazaría por una llamada a la API de OpenAI
-     */
-    private fun simulateAiResponse(userMessage: String) {
+        // Enviar el mensaje a la API de OpenAI y procesar la respuesta
         viewModelScope.launch {
-            // Simulamos un pequeño retraso para hacer la respuesta más realista
-            kotlinx.coroutines.delay(2000) // Aumentamos el retraso para ver mejor el indicador de carga
+            val currentMessages = _uiState.value.messages
             
-            val aiResponse = ChatMessage(
-                content = "Has enviado: $userMessage. Esta es una respuesta simulada de la IA.",
-                isFromUser = false
+            // Llamar al repositorio para obtener la respuesta de la IA
+            val result = chatRepository.sendMessage(
+                message = content,
+                conversationHistory = currentMessages.dropLast(1) // Excluir el mensaje que acabamos de añadir
             )
             
-            _uiState.update { currentState ->
-                currentState.copy(
-                    messages = currentState.messages + aiResponse,
-                    isLoading = false // Desactivar indicador de carga
-                )
-            }
+            // Procesar el resultado
+            result.fold(
+                onSuccess = { aiMessage ->
+                    // Añadir la respuesta de la IA a la conversación
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            messages = currentState.messages + aiMessage,
+                            isLoading = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    // Manejar el error
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            isLoading = false,
+                            error = error.message ?: "Error al comunicarse con la IA"
+                        )
+                    }
+                }
+            )
         }
     }
 }
