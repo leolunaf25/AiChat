@@ -34,7 +34,8 @@ class ChatViewModel : ViewModel() {
         // Añadir el mensaje del usuario a la lista de mensajes
         _uiState.update { currentState ->
             currentState.copy(
-                messages = currentState.messages + userMessage
+                messages = currentState.messages + userMessage,
+                isLoading = true // Activar indicador de carga
             )
         }
         
@@ -52,7 +53,7 @@ class ChatViewModel : ViewModel() {
     private fun simulateAiResponse(userMessage: String) {
         viewModelScope.launch {
             // Simulamos un pequeño retraso para hacer la respuesta más realista
-            kotlinx.coroutines.delay(1000)
+            kotlinx.coroutines.delay(2000) // Aumentamos el retraso para ver mejor el indicador de carga
             
             val aiResponse = ChatMessage(
                 content = "Has enviado: $userMessage. Esta es una respuesta simulada de la IA.",
@@ -61,7 +62,8 @@ class ChatViewModel : ViewModel() {
             
             _uiState.update { currentState ->
                 currentState.copy(
-                    messages = currentState.messages + aiResponse
+                    messages = currentState.messages + aiResponse,
+                    isLoading = false // Desactivar indicador de carga
                 )
             }
         }
